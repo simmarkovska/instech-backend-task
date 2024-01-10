@@ -1,0 +1,50 @@
+Task 1
+To adhere to solid principles a code refactor was required. 
+I split the logic in the controller into multiple levels to have fewer dependencies, 
+and make it more readable and easier to maintain. I created a folder with services, 
+separately for each controller (Claim and Cover) in which I transferred all the logic 
+such as operations with databases and certain calculations, and I also created the appropriate 
+interfaces for each service that is used for communication between the controller and the service. 
+All I left in the controller was just a call to the appropriate function in the service. 
+I placed the Claim.cs and Cover.cs classes in the Models folder and for ClaimType and CoverType 
+I created a separate Enums folder and transferred them respectively to ClaimType.cs and CoverType.cs. 
+For everything to work as it should, changes were also needed in the Program.cs file in the function 
+InitializeCosmosClientInstanceAsync, I made a change to return type Task<CosmosClient> due to certain 
+errors I was getting and the new services had to be added to the builder.services
+
+Task 2
+Regarding the required validations for the Claim, I validated DamageCost on the property itself 
+in the Claim.cs model where I added a rank to accept decimal values from 0 to 100000 otherwise it 
+gives an error. For the CreatedDate validation, I created a DateValidation function in the claim 
+service that is called through the controller every time we want to create a new claim. 
+This function first checks if that cover exists and then if the date is in the range of the 
+start and end date of the cover with which that claim is connected.
+For the validation of the Cover start date on the same principle, I created a function DateValidation 
+in the cover service which is called through the controller every time we want to create a cover and 
+makes the appropriate check. For the total insurance period, in the function itself where the total premium 
+is calculated, I put a restriction with Math.Min() so that the minimum of the two values will always be returned.
+
+Task 3
+For this task I created a ServiceBus and an Azure function (only for Claim), but if we want to apply the same 
+logic to Cover, another Azure function needs to be created. For this purpose I used a free subscription so 
+it is not deployed. First, I created a ServiceBus through the Azure portal (resource group rg-claims,
+name claimsaudit, location Europe...). Then I created a queue (audit-claim). A connection string is obtained 
+through shared access policies. In the main project, I created a new project - Azure function, selected a 
+ServiceBus trigger and wrote the queue name. Then I created a new MessageService in Claims project through 
+which we interact with the function and send messages. We also needed the AuditDb context in the function to 
+log the messages. In the local.settings.json file connection strings should be added and a Startup.cs file 
+is needed in the function to set the configuration. To start the function you need to 
+right-click -> debug -> start new instance. 
+In Cover I just made the calls to be async and move them in the service.
+
+Task 4
+I've created some basic unit tests for this task, they mostly check if the result is of some expected type, 
+if it's not null, is it equal to some mocked data or checking if any calls have been made. 
+But of course more tests can be added here..
+
+Task 5
+The first thing I did to refactor the function was to take the value of the multiplier, 
+I created a new function where depending on the CoverType it would return a certain value. 
+Then I changed the logic so instead of using "for loop", I divided the days by the discount 
+period using Math.Min() and multiplied by premiumPerDay I added them with additional logic that was 
+needed to the TotalPremium.

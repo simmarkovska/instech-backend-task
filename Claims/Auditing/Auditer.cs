@@ -1,15 +1,17 @@
-﻿namespace Claims.Auditing
+﻿using Claims.Auditing.Interfaces;
+
+namespace Claims.Auditing
 {
     public class Auditer
     {
-        private readonly AuditContext _auditContext;
+        private readonly IAuditContext _auditContext;
 
-        public Auditer(AuditContext auditContext)
+        public Auditer(IAuditContext auditContext)
         {
             _auditContext = auditContext;
         }
 
-        public void AuditClaim(string id, string httpRequestType)
+        public async Task AuditClaim(string id, string httpRequestType)
         {
             var claimAudit = new ClaimAudit()
             {
@@ -18,11 +20,11 @@
                 ClaimId = id
             };
 
-            _auditContext.Add(claimAudit);
-            _auditContext.SaveChanges();
+            await _auditContext.AddAsync(claimAudit);
+            await _auditContext.SaveChangesAsync();
         }
         
-        public void AuditCover(string id, string httpRequestType)
+        public async Task AuditCover(string id, string httpRequestType)
         {
             var coverAudit = new CoverAudit()
             {
@@ -31,8 +33,8 @@
                 CoverId = id
             };
 
-            _auditContext.Add(coverAudit);
-            _auditContext.SaveChanges();
+            await _auditContext.AddAsync(coverAudit);
+            await _auditContext.SaveChangesAsync();
         }
     }
 }
