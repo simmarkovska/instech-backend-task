@@ -1,17 +1,16 @@
-﻿using Claims.Auditing.Interfaces;
+﻿using Audit.Auditing.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+using System.Threading;
 
-namespace Claims.Auditing
+namespace Audit.Auditing
 {
-#pragma warning disable 1591 // Disable warning related to missing XML comments
-
     public class AuditContext : DbContext, IAuditContext
     {
         public AuditContext(DbContextOptions<AuditContext> options) : base(options)
         {
         }
-        public DbSet<CoverAudit> CoverAudits { get; set; }
-
+        public DbSet<ClaimAudit> ClaimAudits { get; set; }
         async Task IAuditContext.AddAsync<T>(T entity, CancellationToken cancellationToken) where T : class
         {
             await Set<T>().AddAsync(entity, cancellationToken);

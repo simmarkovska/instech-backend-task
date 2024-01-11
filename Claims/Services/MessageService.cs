@@ -5,6 +5,8 @@ using System.Text;
 
 namespace Claims.Services
 {
+#pragma warning disable 1591 // Disable warning related to missing XML comments
+
     public class MessageService : IMessageService
     {
         private const string ServiceBusConnectionString = "Endpoint=sb://claimsaudit.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=MwP1r85x6R16QX+BmiEG4Kdsu1tL3L/2v+ASbKsq54Q=";

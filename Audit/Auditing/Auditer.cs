@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Claims.Auditing;
+using Audit.Auditing.Interfaces;
 
-namespace Audit
+namespace Audit.Auditing
 {
-    public class Auditer
+    public class Auditer : IAuditer
     {
-        private readonly AuditContext _auditContext;
+        private readonly IAuditContext _auditContext;
 
-        public Auditer(AuditContext auditContext)
+        public Auditer(IAuditContext auditContext)
         {
             _auditContext = auditContext;
         }

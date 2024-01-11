@@ -104,9 +104,9 @@ namespace Claims.Tests
 
             var result = await _claimsController.GetAsync(claimId);
 
-            Assert.NotNull(result);
-            Assert.IsType<Claim>(result);
-            Assert.Equal(claim, result);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var claimResult = Assert.IsType<Claim>(okResult.Value);
+            Assert.Equal(claim, claimResult);
 
         }
 

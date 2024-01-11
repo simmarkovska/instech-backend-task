@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
+#pragma warning disable 1591 // Disable warning related to missing XML comments
 
 namespace Claims.Migrations
 {

@@ -1,22 +1,20 @@
-using System;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Claims.Auditing;
+using Audit.Auditing;
+using Audit.Auditing.Interfaces;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 
 namespace Audit
 {
-    public class Audit
+    public class AuditFunction
     {
-        private readonly Auditer _auditer;
-        public Audit(AuditContext auditContext) {
+        private readonly IAuditer _auditer;
+        public AuditFunction(IAuditContext auditContext) {
             _auditer = new Auditer(auditContext);
         }
 
-        [FunctionName("Audit")]
+        [FunctionName("AuditFunction")]
         public async Task RunAsync([ServiceBusTrigger("audit-claim", Connection = "QueueConnectionString")]string myQueueItem, ILogger log)
         {
             log.LogInformation($"C# ServiceBus queue trigger function processed message: {myQueueItem}");

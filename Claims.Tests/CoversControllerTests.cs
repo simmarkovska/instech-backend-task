@@ -34,22 +34,7 @@ namespace Claims.Tests
             };
         }
 
-        [Fact]
-        public void Compute_Premium()
-        {
-            coverServiceMock.Setup(service => service.ComputePremium(cover.StartDate, cover.EndDate, cover.Type)).Returns(120m);
 
-            var result = _coversController.ComputePremium(cover.StartDate, cover.EndDate, cover.Type);
-
-            Assert.NotNull(result);
-            Assert.IsType<OkObjectResult>(result);
-
-            var okResult = result as OkObjectResult;
-            Assert.NotNull(okResult);
-
-            var premium = Assert.IsType<decimal>(okResult.Value);
-            Assert.Equal(120m, premium);
-        }
 
         [Fact]
         public async Task GetAsync_Covers()
@@ -58,8 +43,8 @@ namespace Claims.Tests
 
             var result = await _coversController.GetAsync();
 
-            Assert.NotNull(result);
-            Assert.IsAssignableFrom<IEnumerable<Cover>>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.IsAssignableFrom<IEnumerable<Cover>>(okResult.Value);
         }
 
         [Fact]
@@ -69,9 +54,9 @@ namespace Claims.Tests
 
             var result = await _coversController.GetAsync(coverId);
 
-            Assert.NotNull(result);
-            Assert.IsType<Cover>(result);
-            Assert.Equal(cover, result);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var coverResult = Assert.IsType<Cover>(okResult.Value);
+            Assert.Equal(cover, coverResult);
         }
 
         [Fact]

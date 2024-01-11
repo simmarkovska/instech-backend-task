@@ -1,10 +1,12 @@
-using Claims.Enums;
 using Claims.Models;
 using Claims.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Claims.Controllers;
 
+///<summary>
+///CoversController
+///</summary>
 [ApiController]
 [Route("[controller]")]
 public class CoversController : ControllerBase
@@ -12,50 +14,98 @@ public class CoversController : ControllerBase
     private readonly ILogger<CoversController> _logger;
     private readonly ICoverService _coverService;
 
+    ///<summary>
+    ///CoversController constructor
+    ///</summary>
     public CoversController(ILogger<CoversController> logger, ICoverService coverService)
     {
         _logger = logger;
         _coverService = coverService;
     }
 
-    [HttpPost("ComputePremuium")]
-    public ActionResult ComputePremium(DateOnly startDate, DateOnly endDate, CoverType coverType)
+    ///<summary>
+    ///Retrieve all Covers
+    ///</summary>
+    [HttpGet]
+    public async Task<ActionResult> GetAsync()
     {
-        return Ok(_coverService.ComputePremium(startDate, endDate, coverType));
+        try
+        {
+            var covers = await _coverService.GetCoversAsync();
+            return Ok(covers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, "An error occurred while fetching covers.");
+        }
     }
 
-    [HttpGet("GetAll")]
-    public async Task<IEnumerable<Cover>> GetAsync()
-    {
-        return await _coverService.GetCoversAsync();
-    }
-
-    [HttpGet("{id}")]
-    public async Task<Cover> GetAsync(string id)
-    {
-        return await _coverService.GetCoverAsync(id);
-    }
-
-    [HttpPost("Create")]
+    ///<summary>
+    ///Create new Cover
+    ///</summary>
+    [HttpPost]
     public async Task<ActionResult> CreateAsync(Cover cover)
     {
-        IActionResult validationResponse = _coverService.DateValidation(cover);
-        if (validationResponse is OkResult)
+        try
         {
-            cover.Id = Guid.NewGuid().ToString();
-            cover.Premium = _coverService.ComputePremium(cover.StartDate, cover.EndDate, cover.Type);
-            await _coverService.AddItemAsync(cover);
-            return Ok(cover);
+            IActionResult validationResponse = _coverService.DateValidation(cover);
+            if (validationResponse is OkResult)
+            {
+                cover.Premium = _coverService.ComputePremium(cover.StartDate, cover.EndDate, cover.Type);
+                await _coverService.AddItemAsync(cover);
+                return Ok(cover);
+            }
+            else
+            {
+                return (ActionResult)validationResponse;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            return (ActionResult)validationResponse;
+            _logger.LogError(ex.Message);
+            return StatusCode(500, "An error occurred while creating a cover.");
         }
     }
 
-    [HttpDelete("{id}")]
-    public async Task DeleteAsync(string id)
+    ///<summary>
+    ///Retrieve Cover by unique Cover Id
+    ///</summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetAsync(string id)
     {
-        await _coverService.DeleteItemAsync(id);
+        try
+        {
+            var cover = await _coverService.GetCoverAsync(id);
+            if (cover == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(cover);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, "An error occurred while fetching cover.");
+        }
+    }
+
+    ///<summary>
+    ///Delete Cover by unique Cover Id
+    ///</summary>
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteAsync(string id)
+    {
+        try
+        {
+            await _coverService.DeleteItemAsync(id);
+            return NoContent(); // Return 204 No Content if sucessfully deleted
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return StatusCode(500, "An error occurred while deleting cover.");
+        }
     }
 }

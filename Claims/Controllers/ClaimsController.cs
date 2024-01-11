@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Claims.Controllers
 {
+    ///<summary>
+    ///ClaimsController
+    ///</summary>
     [ApiController]
     [Route("[controller]")]
     public class ClaimsController : ControllerBase
@@ -12,6 +15,9 @@ namespace Claims.Controllers
         private readonly IClaimService _claimService;
         private readonly IMessageService _messageService;
 
+        ///<summary>
+        ///ClaimsController constructor
+        ///</summary>
         public ClaimsController(ILogger<ClaimsController> logger, 
             IClaimService claimService,
             IMessageService messageService
@@ -23,42 +29,95 @@ namespace Claims.Controllers
             _messageService = messageService;
         }
 
+        ///<summary>
+        ///Retrieve all Claims
+        ///</summary>
         [HttpGet]
-        public Task<IEnumerable<Claim>> GetAsync()
+        public async Task<ActionResult> GetAsync()
         {
-            return _claimService.GetClaimsAsync();
+            try
+            {
+                var claims = await _claimService.GetClaimsAsync();
+                return Ok(claims);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred while fetching claims.");
+            }
         }
 
+        ///<summary>
+        ///Create new Claim
+        ///</summary>
         [HttpPost]
         public async Task<ActionResult> CreateAsync(Claim claim)
         {
-            IActionResult validationResponse = await _claimService.DateValidation(claim);
-            if (validationResponse is OkResult)
+            try
             {
-                claim.Id = Guid.NewGuid().ToString();
-                await _claimService.AddItemAsync(claim);
-                await _messageService.SendMessage(new { ClaimId = claim.Id, Method = "POST" });
-       
+                IActionResult validationResponse = await _claimService.DateValidation(claim);
+
+                if (validationResponse is OkResult)
+                {
+                    await _claimService.AddItemAsync(claim);
+                    await _messageService.SendMessage(new { ClaimId = claim.Id, Method = "POST" });
+
+                    return Ok(claim);
+                }
+                else
+                {
+                    return (ActionResult)validationResponse;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred while creating a claim.");
+            }
+        }
+
+
+        ///<summary>
+        ///Retrieve Claim by unique Claim Id
+        ///</summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetAsync(string id)
+        {
+            try
+            {
+                var claim = await _claimService.GetClaimAsync(id);
+                if (claim == null)
+                {
+                    return NotFound();
+                }
+
                 return Ok(claim);
             }
-            else
+            catch (Exception ex)
             {
-                return (ActionResult)validationResponse;
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred while fetching claim.");
             }
         }
 
+        ///<summary>
+        ///Delete Claim by unique Claim Id
+        ///</summary>
         [HttpDelete("{id}")]
-        public async Task DeleteAsync(string id)
+        public async Task<ActionResult> DeleteAsync(string id)
         {
-            await _messageService.SendMessage(new {ClaimId = id, Method = "DELETE"});
-         
-            await _claimService.DeleteItemAsync(id);
-        }
+            try
+            {
+                await _messageService.SendMessage(new { ClaimId = id, Method = "DELETE" });
+                await _claimService.DeleteItemAsync(id);
 
-        [HttpGet("{id}")]
-        public async Task<Claim> GetAsync(string id)
-        {
-            return await _claimService.GetClaimAsync(id);
+                return NoContent(); // Return 204 No Content if sucessfully deleted
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return StatusCode(500, "An error occurred while deleting claim.");
+            }
         }
     }
 }

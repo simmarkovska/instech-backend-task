@@ -2,7 +2,9 @@
 
 namespace Claims.Auditing
 {
-    public class Auditer
+#pragma warning disable 1591 // Disable warning related to missing XML comments
+
+    public class Auditer : IAuditer
     {
         private readonly IAuditContext _auditContext;
 
@@ -11,19 +13,7 @@ namespace Claims.Auditing
             _auditContext = auditContext;
         }
 
-        public async Task AuditClaim(string id, string httpRequestType)
-        {
-            var claimAudit = new ClaimAudit()
-            {
-                Created = DateTime.Now,
-                HttpRequestType = httpRequestType,
-                ClaimId = id
-            };
 
-            await _auditContext.AddAsync(claimAudit);
-            await _auditContext.SaveChangesAsync();
-        }
-        
         public async Task AuditCover(string id, string httpRequestType)
         {
             var coverAudit = new CoverAudit()

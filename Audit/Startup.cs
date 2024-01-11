@@ -1,4 +1,5 @@
-﻿using Claims.Auditing;
+﻿using Audit.Auditing;
+using Audit.Auditing.Interfaces;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +23,8 @@ namespace Audit
             _configuration = serviceProvider.GetRequiredService<IConfiguration>();
 
             builder.Services.AddDbContext<AuditContext>(options => options.UseSqlServer(_configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<IAuditContext, AuditContext>();
+
         }
 
         public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)

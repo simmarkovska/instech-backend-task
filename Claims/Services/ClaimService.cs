@@ -5,11 +5,17 @@ using Microsoft.Azure.Cosmos;
 
 namespace Claims.Services
 {
+    ///<summary>
+    ///ClaimSerice
+    ///</summary>
     public class ClaimService : ControllerBase, IClaimService
     {
         private readonly Container _container;
         private readonly ICoverService _coverService;
 
+        ///<summary>
+        ///ClaimService constructor
+        ///</summary>
         public ClaimService(CosmosClient dbClient,
             string databaseName, 
             string containerName,
@@ -21,19 +27,50 @@ namespace Claims.Services
             _coverService = coverService ??
                 throw new ArgumentNullException(nameof(coverService)); ;
         }
+
+        ///<summary>
+        ///Retrieve list of all claims from database
+        ///</summary>
         public async Task<IEnumerable<Claim>> GetClaimsAsync()
         {
-            var query = _container.GetItemQueryIterator<Claim>(new QueryDefinition("SELECT * FROM c"));
-            var results = new List<Claim>();
-            while (query.HasMoreResults)
+            try
             {
-                var response = await query.ReadNextAsync();
+                var query = _container.GetItemQueryIterator<Claim>(new QueryDefinition("SELECT * FROM c"));
+                var results = new List<Claim>();
+                while (query.HasMoreResults)
+                {
+                    var response = await query.ReadNextAsync();
 
-                results.AddRange(response.ToList());
+                    results.AddRange(response.ToList());
+                }
+                return results;
             }
-            return results;
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
+        ///<summary>
+        ///Add new claim in database
+        ///</summary>
+        public async Task AddItemAsync(Claim item)
+        {
+            try
+            {
+                item.Id = Guid.NewGuid().ToString();
+                await _container.CreateItemAsync(item, new PartitionKey(item.Id));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            return;
+        }
+
+        ///<summary>
+        ///Retrieve claim from database by unique Claim Id
+        ///</summary>
         public async Task<Claim> GetClaimAsync(string id)
         {
             try
@@ -43,18 +80,29 @@ namespace Claims.Services
             }
             catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                return null;
+                throw new Exception($"No claim with id {id} is found.");
             }
         }
-        public Task AddItemAsync(Claim item)
+
+        ///<summary>
+        ///Delete claim from database by unique Claim Id
+        ///</summary>
+        public async Task DeleteItemAsync(string id)
         {
-            return _container.CreateItemAsync(item, new PartitionKey(item.Id));
-        }
-        public Task DeleteItemAsync(string id)
-        {
-            return _container.DeleteItemAsync<Claim>(id, new PartitionKey(id));
+            try
+            {
+                await _container.DeleteItemAsync<Claim>(id, new PartitionKey(id));
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new Exception($"No claim with id {id} is found.");
+            }
+            return;
         }
 
+        ///<summary>
+        ///Checks if date of creating the claim is in range of start and end date of the related cover
+        ///</summary>
         public async Task<IActionResult> DateValidation(Claim item)
         {
             Cover cover = await _coverService.GetCoverAsync(item.CoverId);
