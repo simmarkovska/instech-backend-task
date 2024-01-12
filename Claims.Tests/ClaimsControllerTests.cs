@@ -42,24 +42,12 @@ namespace Claims.Tests
         [Fact]
         public async Task Get_Claims()
         {
-            var application = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(_ =>
-            {});
+            claimServiceMock.Setup(service => service.GetClaimsAsync()).ReturnsAsync(new List<Claim>());
 
-            var client = application.CreateClient();
+            var result = await _claimsController.GetAsync();
 
-            var response = await client.GetAsync("/Claims");
-
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
-
-            var claims = JsonConvert.DeserializeObject<IEnumerable<Claim>>(content);
-
-            //TODO: Apart from ensuring 200 OK being returned, what else can be asserted?
-
-            Assert.NotNull(response);
-            Assert.IsAssignableFrom<IEnumerable<Claim>>(claims);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.IsAssignableFrom<IEnumerable<Claim>>(okResult.Value);
         }
 
         [Fact]

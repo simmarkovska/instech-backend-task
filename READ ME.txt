@@ -1,22 +1,24 @@
 Task 1
 To adhere to solid principles a code refactor was required. 
-I split the logic in the controller into multiple levels to have fewer dependencies, 
-and make it more readable and easier to maintain. I created a folder with services, 
-separately for each controller (Claim and Cover) in which I transferred all the logic 
-such as operations with databases and certain calculations, and I also created the appropriate 
-interfaces for each service that is used for communication between the controller and the service. 
+I created separate projects for Claims and Covers that are independent, same for the tests 
+and I moved the logic from the controller into multiple levels to have fewer dependencies, 
+and make it more readable and easier to maintain. 
+All of the logic is transferred in services, such as operations with databases and certain calculations. 
+More interfaces are created for obtaining abstraction and communication between the controller and 
+the service. 
 Audit db access was also abstracted. All I left in the controller was just a call to the appropriate 
 function in the service. 
 I placed the Claim.cs and Cover.cs classes in the Models folder and for ClaimType and CoverType 
 I created a separate Enums folder and transferred them respectively to ClaimType.cs and CoverType.cs.
 For everything to work as it should, changes were also needed in the Program.cs file in the function 
 InitializeCosmosClientInstanceAsync, I made a change to return type Task<CosmosClient> due to certain 
-errors I was getting and the new services had to be added to the builder.services
+errors I was getting and the new services had to be added to the builder.services.
+We should run instances from Claims and Cover in order everuything to work as expected.
 
 Task 2
 Regarding the required validations for the Claim, I validated DamageCost on the property itself 
 in the Claim.cs model where I added a range which accept decimal values from 0 to 100000 otherwise it 
-gives an error. For the CreatedDate validation, I created a DateValidation function in the claim 
+returns an error. For the CreatedDate validation, I created a DateValidation function in the claim 
 service that is called through the controller every time we want to create a new claim. 
 This function first checks if that cover exists and then if the date is in the range of the 
 start and end date of the cover with the related claim.

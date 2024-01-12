@@ -1,12 +1,12 @@
-﻿using Claims.Auditing;
-using Claims.Auditing.Interfaces;
-using Claims.Enums;
-using Claims.Models;
-using Claims.Services.Interfaces;
+﻿using Covers.Auditing;
+using Covers.Auditing.Interfaces;
+using Covers.Enums;
+using Covers.Models;
+using Covers.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 
-namespace Claims.Services
+namespace Covers.Services
 {
     ///<summary>
     ///CoverService
@@ -28,8 +28,9 @@ namespace Claims.Services
             if (dbClient == null)
                 throw new ArgumentNullException(nameof(dbClient));
 
-            _container = dbClient?.GetContainer("ClaimDb", "Cover")
-                ?? throw new ArgumentNullException(nameof(dbClient));
+            if (dbClient == null)
+                throw new ArgumentNullException(nameof(dbClient));
+            _container = dbClient.GetContainer(databaseName, containerName);
             _auditContext = auditContext;
             _auditer = new Auditer(_auditContext);
         }
@@ -119,10 +120,15 @@ namespace Claims.Services
         public IActionResult DateValidation(Cover item)
         {
             DateTime coverStartDate = new DateTime(item.StartDate.Year, item.StartDate.Month, item.StartDate.Day);
+            DateTime coverEndDate = new DateTime(item.EndDate.Year, item.EndDate.Month, item.EndDate.Day);
 
             if (coverStartDate.Date < DateTime.Now.Date)
             {
                 return BadRequest("StartDate cannot be in the past.");
+            }
+            else if(coverStartDate.Date > coverEndDate.Date)
+            {
+                return BadRequest("StartDate cannot be greater than EndDate.");
             }
             else
             {

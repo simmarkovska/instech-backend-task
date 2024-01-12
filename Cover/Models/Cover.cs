@@ -1,7 +1,7 @@
-using Claims.Enums;
+using Covers.Enums;
 using Newtonsoft.Json;
 
-namespace Claims.Models;
+namespace Covers.Models;
 
 ///<summary>
 ///Cover Model

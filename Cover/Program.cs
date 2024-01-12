@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Claims.Auditing;
-using Claims.Auditing.Interfaces;
-using Claims.Services;
-using Claims.Services.Interfaces;
+using Covers.Auditing;
+using Covers.Auditing.Interfaces;
+using Covers.Services;
+using Covers.Services.Interfaces;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers().AddJsonOptions(x =>
-    {
-        x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    }
+{
+    x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+}
 );
 
 builder.Services.AddSingleton(
@@ -32,24 +32,21 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddScoped<IAuditContext, AuditContext>();
-
-builder.Services.AddScoped<IClaimService, ClaimService>(sp =>
-{
+builder.Services.AddScoped<ICoverService, CoverService>(sp => {
     var databaseName = builder.Configuration.GetValue<string>("CosmosDb:DatabaseName");
     if (databaseName == null)
     {
         throw new InvalidOperationException("Database name is not configured.");
     }
-    var containerName = builder.Configuration.GetValue<string>("CosmosDb:ContainerName");
+    string? containerName = builder.Configuration.GetValue<string>("CosmosDb:ContainerName");
     if (containerName == null)
     {
         throw new InvalidOperationException("Container name is not configured.");
     }
     var cosmosClient = sp.GetRequiredService<CosmosClient>();
-    return new ClaimService(cosmosClient, databaseName, containerName);
+    var auditContext = sp.GetRequiredService<IAuditContext>();
+    return new CoverService(cosmosClient, databaseName, containerName, auditContext);
 });
-
-builder.Services.AddScoped<IMessageService, MessageService>();
 
 var app = builder.Build();
 
@@ -80,8 +77,8 @@ static async Task<CosmosClient> InitializeCosmosClientInstanceAsync(IConfigurati
     string? containerName = configurationSection.GetSection("ContainerName").Value;
     string? account = configurationSection.GetSection("Account").Value;
     string? key = configurationSection.GetSection("Key").Value;
-    if (string.IsNullOrEmpty(databaseName) 
-        || string.IsNullOrEmpty(containerName) 
+    if (string.IsNullOrEmpty(databaseName)
+        || string.IsNullOrEmpty(containerName)
         || string.IsNullOrEmpty(account) || string.IsNullOrEmpty(key))
     {
         throw new InvalidOperationException("Invalid Cosmos DB configuration. Ensure all required values are provided.");

@@ -2,6 +2,7 @@
 using Claims.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
+using System.Text.Json;
 
 namespace Claims.Services
 {
@@ -11,21 +12,41 @@ namespace Claims.Services
     public class ClaimService : ControllerBase, IClaimService
     {
         private readonly Container _container;
-        private readonly ICoverService _coverService;
+        private string coverEndpoint;
 
         ///<summary>
         ///ClaimService constructor
         ///</summary>
         public ClaimService(CosmosClient dbClient,
-            string databaseName, 
-            string containerName,
-            ICoverService coverService)
+            string databaseName,
+            string containerName)
         {
-            if (dbClient == null) 
+            if (dbClient == null)
                 throw new ArgumentNullException(nameof(dbClient));
             _container = dbClient.GetContainer(databaseName, containerName);
-            _coverService = coverService ??
-                throw new ArgumentNullException(nameof(coverService)); ;
+            coverEndpoint = GetCoverEndpoint();
+        }
+
+        ///<summary>
+        ///Returns Cover Endpoint
+        ///</summary>
+        public string GetCoverEndpoint()
+        {
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            string? coverServiceEndpoint = configuration["CoverServiceEndpoint"];
+
+            if (coverServiceEndpoint != null)
+            {
+                return coverServiceEndpoint;
+            }
+            else
+            {
+                throw new InvalidOperationException("CoverServiceEndpoint configuration value is missing.");
+            }
         }
 
         ///<summary>
@@ -105,26 +126,48 @@ namespace Claims.Services
         ///</summary>
         public async Task<IActionResult> DateValidation(Claim item)
         {
-            Cover cover = await _coverService.GetCoverAsync(item.CoverId);
+            using (HttpClient client = new HttpClient())
+            {
 
-                if (cover != null)
-                { 
-                    DateTime coverStartDate = new DateTime(cover.StartDate.Year, cover.StartDate.Month, cover.StartDate.Day);
-                    DateTime coverEndDate = new DateTime(cover.EndDate.Year, cover.EndDate.Month, cover.EndDate.Day);
+                string apiMethodEndpoint = $"{coverEndpoint}Covers/{item.CoverId}";
 
-                    if(item.Created.CompareTo(coverStartDate) < 0 || item.Created.CompareTo(coverEndDate) > 0)
+                HttpResponseMessage response = await client.GetAsync(apiMethodEndpoint);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string cover = await response.Content.ReadAsStringAsync();
+                    JsonDocument jsonDocument = JsonDocument.Parse(cover);
+                    JsonElement root = jsonDocument.RootElement;
+                    string? startDateTemp = root.GetProperty("startDate").GetString();
+                    string? endDateTemp = root.GetProperty("endDate").GetString();
+
+                    if (startDateTemp!=null && endDateTemp != null)
                     {
-                        return BadRequest("Created date must be within the period of the related Cover");
+                        DateOnly startDate = DateOnly.Parse(startDateTemp);
+                        DateOnly endDate = DateOnly.Parse(endDateTemp);
+                        DateTime coverStartDate = new DateTime(startDate.Year, startDate.Month, startDate.Day);
+                        DateTime coverEndDate = new DateTime(endDate.Year, endDate.Month, endDate.Day);
+
+                        if(item.Created.CompareTo(coverStartDate) < 0 || item.Created.CompareTo(coverEndDate) > 0)
+                        {
+                            return BadRequest("Created date must be within the period of the related Cover");
+                        }
+                        else
+                        {
+                            return Ok();
+                        }
                     }
                     else
                     {
-                        return Ok();
+                        throw new InvalidOperationException("startDate or endDate property is missing.");
+
                     }
                 }
                 else
                 {
                     return BadRequest("Cover not found");
                 }
+            }
         }
     }
 }

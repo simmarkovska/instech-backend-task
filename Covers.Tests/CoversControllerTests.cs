@@ -1,13 +1,13 @@
-﻿using Claims.Controllers;
-using Claims.Enums;
-using Claims.Models;
-using Claims.Services.Interfaces;
+﻿using Covers.Controllers;
+using Covers.Enums;
+using Covers.Models;
+using Covers.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace Claims.Tests
+namespace Covers.Tests
 {
     public class CoversControllerTests
     {

@@ -1,8 +1,8 @@
-using Claims.Models;
-using Claims.Services.Interfaces;
+using Covers.Models;
+using Covers.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Claims.Controllers;
+namespace Covers.Controllers;
 
 ///<summary>
 ///CoversController

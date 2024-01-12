@@ -1,8 +1,8 @@
-﻿using Claims.Enums;
-using Claims.Models;
+﻿using Covers.Enums;
+using Covers.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Claims.Services.Interfaces
+namespace Covers.Services.Interfaces
 {
 #pragma warning disable 1591 // Disable warning related to missing XML comments
 
